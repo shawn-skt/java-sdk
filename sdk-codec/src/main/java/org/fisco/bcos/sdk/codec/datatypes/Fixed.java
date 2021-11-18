@@ -1,5 +1,6 @@
 package org.fisco.bcos.sdk.codec.datatypes;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /** Signed fixed type. */
@@ -12,6 +13,14 @@ public class Fixed extends FixedPointType {
         super(TYPE_NAME, mBitSize, nBitSize, value);
     }
 
+    protected Fixed(int mBitSize, int nBitSize, BigDecimal value) {
+        super(TYPE_NAME, mBitSize, nBitSize, value);
+    }
+
+    protected Fixed(int mBitSize, int nBitSize, BigInteger mValue, BigInteger nValue) {
+        super(TYPE_NAME, mBitSize, nBitSize, mValue, nValue);
+    }
+
     public Fixed(BigInteger value) {
         this(DEFAULT_BIT_LENGTH, DEFAULT_BIT_LENGTH, value);
     }
@@ -20,7 +29,7 @@ public class Fixed extends FixedPointType {
         this(convert(m, n));
     }
 
-    protected Fixed(int mBitSize, int nBitSize, BigInteger m, BigInteger n) {
-        this(convert(mBitSize, nBitSize, m, n));
-    }
+    // protected Fixed(int mBitSize, int nBitSize, BigInteger m, BigInteger n) {
+    //     this(convert(mBitSize, nBitSize, m, n));
+    // }
 }

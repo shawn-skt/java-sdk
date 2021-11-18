@@ -5,6 +5,7 @@ import static org.fisco.bcos.sdk.codec.Utils.getSimpleTypeName;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,7 +62,22 @@ public class TypeDecoder {
                 String[] splitName = type.getSimpleName().split(regex);
                 if (splitName.length == 2) {
                     String[] bitsCounts = splitName[1].split("x");
-                    bitSize = Integer.parseInt(bitsCounts[0]) + Integer.parseInt(bitsCounts[1]);
+                    // bitSize = Integer.parseInt(bitsCounts[0]) + Integer.parseInt(bitsCounts[1]);
+                    // newly define the size is left to "x"
+                    bitSize = Integer.parseInt(bitsCounts[0]);
+                    int nbitSize = Integer.parseInt(bitsCounts[1]);
+                    // int part
+                    byte[] resultIntBytes = reader.readByteArray((bitSize - nbitSize) >> 3);
+                    // decimal part
+                    byte[] resultDecBytes = reader.readByteArray(nbitSize >> 3);
+                    BigInteger numericIntValue = new BigInteger(resultIntBytes);
+                    BigInteger numericDecValue = new BigInteger(resultDecBytes);
+
+                    // byte[] resultBytes = new byte[bitSize >> 3];
+                    // System.arraycopy(resultIntBytes, 0, resultBytes, 0, resultIntBytes.length);
+                    // System.arraycopy(resultDecBytes, 0, resultBytes, resultIntBytes.length, resultDecBytes.length);
+                    // BigDecimal numericFixedValue = new BigDecimal(string);
+                    return type.getConstructor(BigInteger.class,BigInteger.class).newInstance(numericIntValue, numericDecValue);
                 }
             }
 
@@ -103,6 +119,17 @@ public class TypeDecoder {
     public static Utf8String decodeUtf8String(ScaleCodecReader reader) {
         String string = reader.readString();
         return new Utf8String(string);
+    }
+/**
+ * FixedPointType decoder
+ * @param <T>
+ * @param reader
+ * @param type
+ * @return
+ */
+    public static<T extends NumericType> T decodeFixedPointType(ScaleCodecReader reader, Class<T> type) {
+        String string = reader.readString();
+        return null;
     }
 
     @SuppressWarnings("unchecked")

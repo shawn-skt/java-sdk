@@ -2,6 +2,7 @@ package org.fisco.bcos.sdk.codec.abi;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -10,6 +11,8 @@ import org.fisco.bcos.sdk.codec.Utils;
 import org.fisco.bcos.sdk.codec.datatypes.*;
 import org.fisco.bcos.sdk.codec.datatypes.generated.Uint160;
 
+
+import org.fisco.bcos.sdk.codec.Utils;
 /**
  * Ethereum Contract Application Binary Interface (ABI) decoding for types. Decoding is not
  * documented, but is the reverse of the encoding details located <a
@@ -36,7 +39,7 @@ public class TypeDecoder {
         } else if (Array.class.isAssignableFrom(type)) {
             throw new UnsupportedOperationException(
                     "Array types must be wrapped in a TypeReference");
-        } else {
+        } else{
             throw new UnsupportedOperationException("Type cannot be encoded: " + type.getClass());
         }
     }
@@ -45,10 +48,14 @@ public class TypeDecoder {
         return new Address(decodeNumeric(input, Uint160.class));
     }
 
+    public static Fixed decodeFixed(byte[] input, int offset) {
+        return Fixed.DEFAULT;
+    }
+
     public static <T extends NumericType> T decodeNumeric(byte[] inputByteArray, Class<T> type) {
         try {
             int typeLengthAsBytes = getTypeLengthInBytes(type);
-
+            System.out.println(typeLengthAsBytes);
             byte[] resultByteArray = new byte[typeLengthAsBytes + 1];
 
             if (Int.class.isAssignableFrom(type) || Fixed.class.isAssignableFrom(type)) {
@@ -57,8 +64,21 @@ public class TypeDecoder {
 
             int valueOffset = Type.MAX_BYTE_LENGTH - typeLengthAsBytes;
             System.arraycopy(inputByteArray, valueOffset, resultByteArray, 1, typeLengthAsBytes);
+            System.out.println(resultByteArray.length);
+            if (type.getSimpleName().startsWith("Fixed") && type.getSimpleName().substring(5).split("x").length>0) {
+                for (int i=0; i<resultByteArray.length;i++) {
+                    System.out.println(resultByteArray[i]);
+                    // System.out.println(i);
+                }
+                int deciBitCount = Integer.parseInt(type.getSimpleName().substring(5).split("x")[1]);
+                BigDecimal result = Utils.processFixedDecode(resultByteArray,deciBitCount);
+                System.out.println("result" + result);
+                // result.setScale(deciBitCount, BigDecimal.ROUND_HALF_UP).doubleValue();
+                return type.getConstructor(BigDecimal.class).newInstance(result);
+            }
 
             BigInteger numericValue = new BigInteger(resultByteArray);
+            System.out.println("numvalue"+numericValue);
             return type.getConstructor(BigInteger.class).newInstance(numericValue);
 
         } catch (NoSuchMethodException
@@ -89,7 +109,9 @@ public class TypeDecoder {
             String[] splitName = type.getSimpleName().split(regex);
             if (splitName.length == 2) {
                 String[] bitsCounts = splitName[1].split("x");
-                return Integer.parseInt(bitsCounts[0]) + Integer.parseInt(bitsCounts[1]);
+                // System.out.println(bitsCounts[0]);
+                // return Integer.parseInt(bitsCounts[0]) + Integer.parseInt(bitsCounts[1]);
+                return Integer.parseInt(bitsCounts[0]);
             }
         }
         return Type.MAX_BIT_LENGTH;

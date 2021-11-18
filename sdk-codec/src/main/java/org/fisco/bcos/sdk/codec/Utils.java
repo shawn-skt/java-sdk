@@ -1,12 +1,16 @@
 package org.fisco.bcos.sdk.codec;
 
 import java.lang.reflect.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.fisco.bcos.sdk.codec.abi.TypeMappingException;
 import org.fisco.bcos.sdk.codec.datatypes.*;
 import org.fisco.bcos.sdk.codec.datatypes.Type;
@@ -259,5 +263,104 @@ public class Utils {
             }
         }
         return result;
+    }
+
+    public static Pair<BigInteger, BigDecimal> divideFixed(BigDecimal value) {
+        // Decimal Part
+        BigDecimal fractionalPart = value.remainder( BigDecimal.ONE ); 
+        // System.out.println(fractionalPart);
+
+        // Integer Part
+        System.out.println(value.subtract(fractionalPart));
+        BigInteger in = value.subtract(fractionalPart).toBigInteger();
+        // System.out.println("The integer is: " + in);
+        return Pair.of(in, fractionalPart);
+    }
+
+    public static byte[] getBytesOfDecimalPart(BigDecimal decimal, int nBitSize) {
+        double r = 0d;
+        if (decimal.signum()<0){
+           r = decimal.doubleValue()+1;
+        }else
+            r = decimal.doubleValue();
+        
+        StringBuilder stringBuilder = new StringBuilder();
+        
+        int count = nBitSize; 
+        double num = 0;
+        
+        while (Math.abs(r) > 0.0000000001) {
+            r = Math.abs(r);
+            if (count == 0) {
+                // throw new Exception("Cannot change the decimal number to binary!");
+                break;
+            }
+            num = r * 2;
+            if (num >= 1) {
+                stringBuilder.append(1);
+                r = num - 1;
+                if(r == 0) {
+                    for (int i = 0; i < count - 1; i++) {
+                        stringBuilder.append(0);
+                    }
+                    System.out.println(count);
+                }
+            } else {
+                stringBuilder.append(0);
+                r = num;
+            }
+            count--;
+        }
+        if (stringBuilder.length() == 0) {
+            byte[] zeroByte = new byte[nBitSize/8];
+            return zeroByte;
+        }
+        long result = Long.parseLong(stringBuilder.toString(), 2);
+        byte[] resultByte = new byte[nBitSize/8];
+        System.out.println(resultByte.length);
+        byte[] resultBytes = BigInteger.valueOf(result).toByteArray();
+        System.out.println("resultBytes"+resultBytes.length);
+        if (resultBytes.length==nBitSize/8) {
+            for (int i=0;i<resultByte.length;i++) {
+                resultByte[i] = resultBytes[i];
+                System.out.println(resultByte[i]);
+            }
+        }else {
+            for (int i=0;i<resultByte.length;i++) {
+                resultByte[i] = resultBytes[i+1];
+                System.out.println(resultByte[i]);
+            }
+        }
+        return resultByte;
+    }
+ 
+    public static BigDecimal processFixedDecode(byte[] resultByteArray, int decimalCount) {
+        byte[] intPart = new byte[resultByteArray.length-decimalCount/8];
+        byte[] decPart = new byte[decimalCount/8];
+        for (int i = 0,j=0; i < resultByteArray.length; i++) {
+            if (i < resultByteArray.length - decimalCount/8) {
+                intPart[i] = resultByteArray[i];
+                System.out.println(resultByteArray[i]);
+            }else {
+                decPart[j] = resultByteArray[i];
+                j++;
+                System.out.println("dec"+resultByteArray[i]);
+            }
+        }
+        if(intPart[0]==0) {
+            BigInteger integer = new BigInteger(1,intPart);
+            BigDecimal decimal = new BigDecimal(1/Math.pow(2, decimalCount)*(new BigInteger(1,decPart)).longValue());
+            System.out.println((new BigInteger(1,decPart)).longValue());
+            System.out.println("decimal:"+decimal);
+            System.out.println(decimal.add(new BigDecimal(integer)));
+            return decimal.add(new BigDecimal(integer));
+        }else{
+            BigInteger integer = new BigInteger(intPart);
+            BigDecimal decimal = new BigDecimal(1/Math.pow(2, decimalCount)*((new BigInteger(1,decPart)).doubleValue()));
+            System.out.println(integer);
+            System.out.println(decimal);
+            System.out.println(decimal.add(new BigDecimal(integer)));
+            return decimal.add(new BigDecimal(integer));
+        }
     }
 }

@@ -4,11 +4,15 @@ import static org.fisco.bcos.sdk.codec.datatypes.Type.MAX_BYTE_LENGTH;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+
+import org.fisco.bcos.sdk.codec.Utils;
 import org.fisco.bcos.sdk.codec.datatypes.*;
 
 /**
@@ -55,6 +59,7 @@ public class TypeEncoder {
     public static byte[] encodeNumeric(NumericType numericType) {
         byte[] rawValue = toByteArray(numericType);
         byte paddingValue = getPaddingValue(numericType);
+        System.out.println("padding"+paddingValue);
         byte[] paddedRawValue = new byte[MAX_BYTE_LENGTH];
         if (paddingValue != 0) {
             for (int i = 0; i < paddedRawValue.length; i++) {
@@ -86,6 +91,29 @@ public class TypeEncoder {
                 System.arraycopy(value.toByteArray(), 1, byteArray, 0, MAX_BYTE_LENGTH);
                 return byteArray;
             }
+        } else if(numericType instanceof Fixed && numericType.getClass().getSimpleName().substring(5).split("x").length>0) {
+            BigDecimal dValue = numericType.getDValue();
+            
+            byte[] byteArray = value.toByteArray();
+            // byteArray = ;
+            System.out.println("00000000");
+            System.out.println("byteLength:"+byteArray.length);
+            for(int i=0; i<byteArray.length; i++) {
+                System.out.println(byteArray[i]);
+            }
+            byte[] decimalByteArray = new byte[numericType.getNBitSize()/8];
+            // decimalByteArray[0] = 32;
+            // decimalByteArray[1] = 0;
+            decimalByteArray = Utils.getBytesOfDecimalPart(dValue, numericType.getNBitSize());
+            for(int i=0; i<decimalByteArray.length; i++) {
+                System.out.println("decimalByteArray"+decimalByteArray[i]);
+            }
+            System.out.println("decimalLen"+decimalByteArray.length);
+            byte[] finalByteArray = new byte[byteArray.length + decimalByteArray.length];
+            System.arraycopy(byteArray, 0, finalByteArray, 0, byteArray.length);
+            System.arraycopy(decimalByteArray, 0, finalByteArray, byteArray.length, decimalByteArray.length);
+            System.out.println("00000000");
+            return finalByteArray;
         }
         return value.toByteArray();
     }

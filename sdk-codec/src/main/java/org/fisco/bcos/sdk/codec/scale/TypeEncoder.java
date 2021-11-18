@@ -1,9 +1,12 @@
 package org.fisco.bcos.sdk.codec.scale;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import org.fisco.bcos.sdk.codec.Utils;
 import org.fisco.bcos.sdk.codec.datatypes.*;
 
 public class TypeEncoder {
@@ -36,9 +39,28 @@ public class TypeEncoder {
 
         byte[] byteArray = new byte[bitSize >> 3];
         BigInteger value = numericType.getValue();
-        byte[] byteValue = value.toByteArray();
-        for (int i = 0; i < byteValue.length; ++i) {
-            byteArray[i] = byteValue[byteValue.length - i - 1];
+        // For FixedPointType number encoding
+        if (FixedPointType.class.isAssignableFrom(numericType.getClass())){
+            String regex =
+                        "("
+                                + Ufixed.class.getSimpleName()
+                                + "|"
+                                + Fixed.class.getSimpleName()
+                                + ")";
+                String[] splitName = numericType.getClass().getSimpleName().split(regex);
+                if (splitName.length == 2) {
+                    // FixedPointType processing
+                    byte[] byteIntValue = value.toByteArray();
+                    byte[] byteDecValue = numericType.getNValue().toByteArray();
+                    System.arraycopy(byteIntValue, 0, byteArray, 0, byteIntValue.length);
+                    System.arraycopy(byteDecValue, 0, byteArray, byteIntValue.length, byteDecValue.length);
+                    System.out.println("done");
+                }
+        }else {
+            byte[] byteValue = value.toByteArray();
+            for (int i = 0; i < byteValue.length; ++i) {
+                byteArray[i] = byteValue[byteValue.length - i - 1];
+            }
         }
         writer.writeByteArray(byteArray);
     }
