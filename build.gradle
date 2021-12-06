@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
     id 'java-library'
     id 'java'
-    id 'org.ajoberstar.grgit' version '4.1.0'
+    id 'org.ajoberstar.grgit' version '4.1.1'
     id 'com.github.sherter.google-java-format' version '0.9'
 }
 println("Notice: current gradle version is " + gradle.gradleVersion)
@@ -25,7 +25,7 @@ ext {
     picocliVersion = '4.6.1'
     toml4jVersion = "0.7.2"
     bcprovJDK15onVersion = '1.69'
-    keyMiniToolkit = "1.0.3"
+    keyMiniToolkit = "1.0.4-SNAPSHOT"
 
     junitVersion = '4.13.2'
     commonsCollections4Version = "4.4"
@@ -50,7 +50,7 @@ allprojects {
     apply plugin: 'signing'
 
     configurations.all {
-        resolutionStrategy.cacheChangingModulesFor 30, 'seconds'
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
 
     jacoco {
